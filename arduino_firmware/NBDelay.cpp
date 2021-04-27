@@ -3,9 +3,7 @@
 
 
 bool nb_delay(unsigned long *start_millis, unsigned long to_delay)
-{ 
-  //Serial.println(to_delay);
-  
+{   
   if(*start_millis == 0)
   {
     *start_millis = millis();
