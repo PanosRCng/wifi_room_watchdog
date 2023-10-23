@@ -1,5 +1,5 @@
 #include <SoftwareSerial.h>
-#include "Dht11.h"
+#include "dht.h"
 #include "NBDelay.h"
 
 #define LED_PIN 11
@@ -14,13 +14,14 @@
 
 #define SERIAL_BAUD 9600
 #define WAIT_MINUTES 5
-#define RESAMPLE_NUMBER 3
-#define DELAY_BETWEEN_SAMPLES 1000
+#define RESAMPLE_NUMBER 1
+#define DELAY_BETWEEN_SAMPLES 2000
 #define PIR_CALIBRATION_SECONDS 30
-#define PIR_FALL_DELAY 1000
+#define PIR_FALL_DELAY 10000
 #define MSWTICH_READ_DELAY 200
 #define SEND_DELAY 1000
 #define LIGHT_DELAY_MINUTES 30
+#define LIGHT_ON_THRESHOLD 200
 
 #define SAMPLE 0
 #define SEND_MSG 1
@@ -31,10 +32,9 @@
 #define LIGHT_MANUAL 5
 
 
+dht DHT;
 
 SoftwareSerial mySerial(RX_PIN, TX_PIN);
-
-static Dht11 sensor(DHT_DATA_PIN);
 
 unsigned long sample_delay_millis;
 unsigned long wait_delay_millis;
@@ -69,18 +69,10 @@ void sampleLight()
 
 void sampleTempHumi()
 {
-  switch( sensor.read() )
-  {
-    case Dht11::OK:
-      t_sample = sensor.getTemperature();
-      h_sample = sensor.getHumidity();    
-      break;
-    default:
-      t_sample = -1;
-      h_sample = -1;
-      l_sample = -1;
-      break;  
-  }
+  int chk = DHT.read11(DHT_DATA_PIN);
+
+  t_sample = DHT.temperature;
+  h_sample = DHT.humidity;
 }
 
 
@@ -146,6 +138,7 @@ void movementEvent()
     
   pir_rise = false;
 }
+
 
 
 void lockEvent()
@@ -216,7 +209,7 @@ void sample()
 
 void light_off()
 {
-  if(pir_rise)
+  if( (pir_rise == true) && (analogRead(LIGHT_PIN) < LIGHT_ON_THRESHOLD))
   {
     light_delay_millis = 0;
     light_minutes = 0;
@@ -246,7 +239,7 @@ void light_on()
     return;
   }
 
-  if(pir_rise)
+  if( (pir_rise == true) && (analogRead(LIGHT_PIN) < LIGHT_ON_THRESHOLD))
   {
     light_delay_millis = 0;
     light_minutes = 0;
@@ -348,8 +341,6 @@ void move2FirstState()
 
 void setup()
 { 
-  Serial.begin(9600);
-  
   mySerial.begin(SERIAL_BAUD);
 
   light_state = LIGHT_ON;
@@ -369,6 +360,7 @@ void setup()
   attachInterrupt(digitalPinToInterrupt(PIR_PIN), pir_isr, RISING);
   pir_rise = false;
   pir_fall_delay_millis = 0;
+
 
   calibratePir();
 

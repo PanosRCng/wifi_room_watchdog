@@ -1,5 +1,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
+#include <WiFiClient.h>
 
 
 #define AP_SSID "XXXXXXXXXX"
@@ -38,6 +39,8 @@ String msg;
 int connect_retry;
 int send_retry;
 
+
+WiFiClient wifiClient;
 
 
 
@@ -106,7 +109,7 @@ void sendMsg()
 
   HTTPClient http;
 
-  http.begin(url);
+  http.begin(wifiClient, url);
   http.addHeader("content-type", "application/x-www-form-urlencoded");
 
   int httpCode = http.POST(data);
